@@ -1,0 +1,61 @@
+CC:=gcc
+CFLAGS:=-Wall -g -O0
+
+log:=thirdparty/log/log.c thirdparty/log/log.h
+cJSON:=thirdparty/cJSON/cJSON.c thirdparty/cJSON/cJSON.h
+app_common:=app/app_common.c app/app_common.h
+app_message:=app/app_message.c app/app_message.h
+app_mqtt:=app/app_mqtt.c app/app_mqtt.h
+app_pool:=app/app_pool.c app/app_pool.h
+app_buffer:=app/app_buffer.c app/app_buffer.h
+app_device:=app/app_device.c app/app_device.h
+app_bt:=app/app_bt.c app/app_bt.h
+
+log_test: test/log_test.c $(log)
+	$(CC) $(CFLAGS) $^ -o $@ -I thirdparty
+	./$@
+	rm $@
+
+cJSON_test: test/cJSON_test.c $(cJSON) $(log)
+	$(CC) $(CFLAGS) $^ -o $@ -Ithirdparty
+# 	./$@
+# 	rm $@
+
+app_common_test: test/app_common_test.c $(log) $(cJSON) $(app_common)
+	$(CC) $^ -o $@ -Iapp -Ithirdparty
+	./$@
+	rm $@
+
+app_message_test: test/app_message_test.c $(log) $(cJSON) $(app_common) $(app_message)
+	$(CC) $(CFLAGS) $^ -o $@ -Iapp -Ithirdparty
+	./$@
+	rm $@
+
+mqtt_test: test/mqtt_test.c $(log) $(cJSON) $(app_common) $(app_message)
+	$(CC) $(CFLAGS) $^ -o $@ -Iapp -Ithirdparty -lpaho-mqtt3c
+	./$@
+	rm $@
+
+app_mqtt_test: test/app_mqtt_test.c $(log) $(cJSON) $(app_common) $(app_message) $(app_mqtt)
+	$(CC) $(CFLAGS) $^ -o $@ -Iapp -Ithirdparty -lpaho-mqtt3c
+	./$@
+	rm $@
+
+app_pool_test: test/app_pool_test.c $(log) $(cJSON) $(app_common) $(app_message) $(app_pool) app/app_pool.c app/app_pool.h
+	$(CC) $(CFLAGS) $^ -o $@ -Iapp -Ithirdparty
+	./$@
+	rm $@
+
+app_buffer_test: test/app_buffer_test.c $(log) $(cJSON) $(app_common) $(app_message) $(app_pool) $(app_buffer)
+	$(CC) $(CFLAGS) $^ -o $@ -Iapp -Ithirdparty
+	./$@
+	rm $@
+
+app_device_test: test/app_device_test.c $(log) $(cJSON) $(app_common) $(app_message) $(app_pool) $(app_buffer) $(app_mqtt) $(app_device) $(app_bt)
+	$(CC) $(CFLAGS) $^ -o $@ -Iapp -Ithirdparty -lpaho-mqtt3c
+	./$@
+	rm $@
+# $^ 依赖列表
+# $@ 目标名
+# -I 给gcc配置包含的查找路径
+# -l 指定用到的下载库
