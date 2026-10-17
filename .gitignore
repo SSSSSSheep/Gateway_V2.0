@@ -1,8 +1,31 @@
-/.vscode
-
-*.i
-*.s
+# 1. 编译产物和可执行文件
 *.o
+*.a
+*.so
+*.app
+*.out
+*.bin
+*.dtb
+*.img
+*.ext2
+*.ext4
+*.squashfs
+*.jffs2
+zImage
 
+# 2. 输出目录、根文件系统和工具链
+output/
+sysroot/
+toolchain/
+rootfs/
 
+# 3. 压缩包
+*.gz
+*.tar
+*.zip
 
+# 4. 测试数据和临时文件
+serial_file
+test_dev_file
+*.log
+.vscode/
