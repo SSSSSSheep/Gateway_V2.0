@@ -28,4 +28,10 @@ rootfs/
 serial_file
 test_dev_file
 *.log
+
+
+gateway
+*.c app
+*.h app
+
 .vscode/
