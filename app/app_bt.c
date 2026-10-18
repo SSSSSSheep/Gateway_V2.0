@@ -45,7 +45,7 @@ static int init_bt(Device *device)
         return -1;
     }
 
-    app_bt_rename(device, "Sheep"); // 设置蓝牙名称
+    app_bt_rename(device, "Sheep");  // 设置蓝牙名称
     app_bt_setNetId(device, "1111"); // 设置组网ID ：组内相同 组间不同
     app_bt_setMaddr(device, "0101"); // 设置MAC地址 ：组内不同 组间相同
     // 将串口设置为阻塞模式
@@ -112,21 +112,41 @@ int app_bt_preWrite(char *data, int data_len)
         return -1;
     }
 
+    // data[2] 是业务数据(msg)的长度
+    int msg_len = (unsigned char)data[2];
+
     // 计算蓝牙数据的长度
-    int blue_len = 7 + 2 + data[2] + 2;
+    // AT+MESH(7) + CMD(1) + 目标ID(2) + 源地址(2) + 长度(1) + msg + \r\n(2)
+    int blue_len = 7 + 1 + 2 + 2 + 1 + msg_len + 2;
+    
     // 创建蓝牙数据数组容器
     char blue_data[blue_len];
+
     // 根据data中的数据组装蓝牙数据
-    // data: 1 2 3 XX abc
-    // blue_data: AT+MESH XX abc \r\n
-    // 拷贝AT+MESH
+    // data: [conn_type][id_len][msg_len][id][msg]
+    // blue_data: AT+MESH + CMD + ID + 源地址 + 长度 + msg + \r\n
+    
+    // 1. 拷贝 AT+MESH (7字节)
     memcpy(blue_data, "AT+MESH", 7);
-    // 拷贝id
-    memcpy(blue_data + 7, data + 3, 2);
-    // 拷贝msg
-    memcpy(blue_data + 9, data + 5, data[2]);
-    // 拷贝\r\n
-    memcpy(blue_data + 9 + data[2], "\r\n", 2);
+    
+    // 2. 写入 CMD 功能码 00
+    blue_data[7] = 0x00;
+    
+    // 3. 拷贝 id (目标地址，从 data+3 开始取2字节)
+    memcpy(blue_data + 8, data + 3, 2);
+    
+    // 4. 写入网关源地址 01 01
+    blue_data[10] = 0x01;
+    blue_data[11] = 0x01;
+    
+    // 5. 写入业务数据长度
+    blue_data[12] = (unsigned char)msg_len;
+    
+    // 6. 拷贝 msg (业务数据，从 data+5 开始)
+    memcpy(blue_data + 13, data + 5, msg_len);
+    
+    // 7. 拷贝 \r\n 结尾
+    memcpy(blue_data + 13 + msg_len, "\r\n", 2);
 
     // 清空data中的数据
     memset(data, 0, data_len);
@@ -312,7 +332,7 @@ int app_bt_postRead(char *data, int data_len)
             log_info("[postRead] 解析成功，返回长度=%d，剩余缓存=%d",
                      output_len, read_len);
 
-            return output_len;
+            return data[2] + 5;
         }
     }
 
@@ -349,7 +369,7 @@ int app_bt_setBaudRate(Device *device, BT_BaudRate baudRate)
 {
     // 拼接AT指令
     char cmd[64];
-    sprintf(cmd, "AT+BAUD%d\r\n", baudRate);
+    sprintf(cmd, "AT+BAUD%c\r\n", baudRate);
     // 写入指令
     write(device->fd, cmd, strlen(cmd));
     return wait_ack(device->fd);
